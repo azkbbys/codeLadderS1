@@ -43,7 +43,7 @@ world.onTick(({tick})=>{
             if(randint(1,2)===1){
                 world.createEntity({
                     mesh:'mesh/红色标准箱.vb',
-                    position:new GameVector3(randint(1,63), 10, randint(1,63)),
+                    position:new GameVector3(randint(3,60), 10, randint(3,60)),
                     meshScale:new GameVector3(0.05, 0.05, 0.05),
                     collides:true, // 是否可碰撞
                     fixed:false, // 是否固定
@@ -54,7 +54,7 @@ world.onTick(({tick})=>{
             else{
                 world.createEntity({
                     mesh:'mesh/绿色标准箱.vb',
-                    position:new GameVector3(randint(1,63), 10, randint(1,63)),
+                    position:new GameVector3(randint(3,60), 10, randint(3,60)),
                     meshScale:new GameVector3(0.05, 0.05, 0.05),
                     collides:true, // 是否可碰撞
                     fixed:false, // 是否固定
