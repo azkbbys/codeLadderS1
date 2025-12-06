@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "arenapro-server-debugger",
+      "name": "ArenaPro Server Debugger",
+      "request": "launch",
+      "sourceMapPathOverrides": {
+        "webpack:///./*": "${workspaceFolder}/server/dist/*",
+        "webpack:///../*": "${workspaceFolder}/server/*"
+      }
+    },
+    {
+      "type": "arenapro-client-debugger",
+      "name": "ArenaPro Client Debugger",
+      "request": "launch",
+      "sourceMapPathOverrides": {
+        "webpack:///./*": "${workspaceFolder}/client/dist/*",
+        "webpack:///../*": "${workspaceFolder}/client/*"
+      }
+    }
+  ]
+}

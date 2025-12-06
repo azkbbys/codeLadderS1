@@ -1,0 +1,7 @@
+{
+  "welcome_game": "Welcome to the BOX3 Game!",
+  "welcome_ap": "Welcome to ArenaPro!",
+  "navigator": {
+    "language": "You are using {{language}}"
+  }
+}

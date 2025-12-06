@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "ArenaPro-MCP": {
+      "type": "sse",
+      "url": "http://localhost:25315/ap-mcp"
+    }
+  }
+}

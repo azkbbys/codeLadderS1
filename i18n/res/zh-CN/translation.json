@@ -1,0 +1,7 @@
+{
+  "welcome_game": "欢迎来到神奇代码岛！",
+  "welcome_ap": "欢迎使用ArenaPro！",
+  "navigator": {
+    "language": "你的浏览器使用语言是：{{language}}"
+  }
+}
