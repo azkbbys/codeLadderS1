@@ -73,6 +73,7 @@ world.onEntityContact(({entity, other})=>{
     if(other.id==='标准箱'){
         e.shouji+=1
         e.player.directMessage('收集了1个标准箱')
+        remoteChannel.sendClientEvent(e, {type:'shouji', data:e.shouji})
         other.destroy()
     }
 })
