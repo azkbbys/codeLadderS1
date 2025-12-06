@@ -25,6 +25,7 @@ function getboxnumber(){
 }
 
 world.onPlayerJoin(({entity})=>{
+    entity.shouji=0
     entity.player.enableJump = false;
     entity.player.walkSpeed = walkSpeed;
     entity.player.runSpeed = runSpeed;
@@ -66,11 +67,12 @@ world.onTick(({tick})=>{
 })
 
 // 收集箱子
-// world.onEntityContact(({entity, other})=>{
-//     if(!entity.player)return
-//     let e = entity as GamePlayerEntity
-//     if(other.id==='标准箱'){
-//         e.shouji+=1
-//         other.destroy()
-//     }
-// })
+world.onEntityContact(({entity, other})=>{
+    if(!entity.player)return
+    let e = entity as GamePlayerEntity
+    if(other.id==='标准箱'){
+        e.shouji+=1
+        e.player.directMessage('收集了1个标准箱')
+        other.destroy()
+    }
+})
