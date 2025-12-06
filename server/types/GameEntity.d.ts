@@ -4,4 +4,5 @@
  */
 declare interface GameEntity extends GameEntity {
     shouji: number;
+    taking: number;
 };
