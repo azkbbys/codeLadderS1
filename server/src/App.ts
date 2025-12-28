@@ -4,6 +4,8 @@ var walkSpeed = 0.5;
 var runSpeed = 0.5;
 var acceleration = 0.5;
 
+require('./navigate.ts')
+
 // 函数
 /**
  * 获取随机整数
@@ -59,7 +61,7 @@ function generate_box(){
         if(rand===1){
             world.createEntity({
                 mesh:'mesh/红色标准箱.vb',
-                position:new GameVector3(randint(7,60), 13, randint(3,57)),
+                position:new GameVector3(randint(7,60), 13, randint(3,54)),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
@@ -72,7 +74,7 @@ function generate_box(){
         else if(rand===2){
             world.createEntity({
                 mesh:'mesh/绿色标准箱.vb',
-                position:new GameVector3(randint(7,60), 13, randint(3,57)),
+                position:new GameVector3(randint(7,60), 13, randint(3,54)),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
@@ -85,7 +87,7 @@ function generate_box(){
         else if(rand===3){
             world.createEntity({
                 mesh:'mesh/红色标准箱.vb',
-                position:new GameVector3(48, 10, randint(59,60)),
+                position:new GameVector3(48, 10, randint(58,59)),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
@@ -99,7 +101,7 @@ function generate_box(){
         else if(rand===4){
             world.createEntity({
                 mesh:'mesh/绿色标准箱.vb',
-                position:new GameVector3(48, 10, randint(59,60)),
+                position:new GameVector3(48, 10, randint(58,59)),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
