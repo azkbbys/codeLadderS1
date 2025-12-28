@@ -1,4 +1,23 @@
 import i18n from "@root/i18n";
+
+// 任务目标类型
+type TargetType = 'A' | 'B' | 'any';
+
+// 任务类
+class Task {
+    description: string;          // 任务描述
+    targetType: TargetType;       // 目标类型（A类/B类/任意）
+    targetCount: number;          // 目标数量
+    timeLimit?: number;           // 时间限制（仅限时任务有，单位：秒）
+
+    constructor(description: string, targetType: TargetType, targetCount: number, timeLimit?: number) {
+        this.description = description;
+        this.targetType = targetType;
+        this.targetCount = targetCount;
+        this.timeLimit = timeLimit;
+    }
+}
+
 console.clear()
 var walkSpeed = 0.5;
 var runSpeed = 0.5;
