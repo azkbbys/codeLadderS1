@@ -4,6 +4,8 @@ var walkSpeed = 0.5;
 var runSpeed = 0.5;
 var acceleration = 0.5;
 
+require('./navigate.ts')
+
 // 函数
 /**
  * 获取随机整数
@@ -55,10 +57,11 @@ function getboxnumber(){
  */
 function generate_box(){
     if(getboxnumber()<10){
-        if(randint(1,2)===1){
+        let rand = randint(1,4);
+        if(rand===1){
             world.createEntity({
                 mesh:'mesh/红色标准箱.vb',
-                position:new GameVector3(randint(3,60), 13, randint(3,60)),
+                position:new GameVector3(randint(7,60), 13, randint(3,54)),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
@@ -68,10 +71,10 @@ function generate_box(){
                 friction:0.8,
             })
         }
-        else{
+        else if(rand===2){
             world.createEntity({
                 mesh:'mesh/绿色标准箱.vb',
-                position:new GameVector3(randint(3,60), 13, randint(3,60)),
+                position:new GameVector3(randint(7,60), 13, randint(3,54)),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
@@ -79,6 +82,34 @@ function generate_box(){
                 id:'标准箱绿',
                 meshOrientation:new GameQuaternion(randint(0,100)/100, randint(0,100)/100, randint(0,100)/100, 1),
                 friction:0.8,
+            })
+        }
+        else if(rand===3){
+            world.createEntity({
+                mesh:'mesh/红色标准箱.vb',
+                position:new GameVector3(48, 10, randint(58,59)),
+                meshScale:new GameVector3(0.05, 0.05, 0.05),
+                collides:true, // 是否可碰撞
+                fixed:false, // 是否固定
+                gravity:true, // 是否受重力
+                id:'标准箱红',
+                meshOrientation:new GameQuaternion(randint(0,100)/100, randint(0,100)/100, randint(0,100)/100, 1),
+                friction:0.8,
+                tags:['conveyor'],
+            })
+        }
+        else if(rand===4){
+            world.createEntity({
+                mesh:'mesh/绿色标准箱.vb',
+                position:new GameVector3(48, 10, randint(58,59)),
+                meshScale:new GameVector3(0.05, 0.05, 0.05),
+                collides:true, // 是否可碰撞
+                fixed:false, // 是否固定
+                gravity:true, // 是否受重力
+                id:'标准箱绿',
+                meshOrientation:new GameQuaternion(randint(0,100)/100, randint(0,100)/100, randint(0,100)/100, 1),
+                friction:0.8,
+                tags:['conveyor'],
             })
         }
     }
@@ -98,13 +129,13 @@ world.onPlayerJoin(({entity})=>{
             if((underfoot!==287 && underfoot!==281)||entity.taking===0)return;//不在区域内跳出
             entity.player.removeWearable(entity.player.wearables(GameBodyPart.HEAD)[0])
             let area = underfoot===287?2:1;
-            if(area===entity.taking){
+            if(area%2===entity.taking%2){
                 entity.player.directMessage('收集了1个箱子');
-                entity.shouji+=1;
+                entity.shouji+=entity.taking>2?2:1;
                 remoteChannel.sendClientEvent(entity, {type:'shouji', data:entity.shouji});
             }
             else{
-                entity.player.directMessage(`类型错误，${entity.taking===1?'红色':'绿色'}箱子不应放在${area===1?'红':'绿'}区域`);
+                entity.player.directMessage(`类型错误，${entity.taking%2===1?'红色':'绿色'}箱子不应放在${area===1?'红':'绿'}区域`);
                 remoteChannel.sendClientEvent(entity, {type:'error'});
                 generate_box();
             }
@@ -128,7 +159,17 @@ world.onTick(({tick})=>{
         generate_box()
     }
 })
-
+const destroyArea = world.addZone({
+    selector: "*",
+    bounds: new GameBounds3(
+        new GameVector3(0, 8, 13),
+        new GameVector3(5, 13, 14)
+    ),
+});
+destroyArea.onEnter(({entity})=>{// 销毁末端箱子
+    if(entity.player)return;
+    entity.destroy();
+})
 const red_onhead = [
     { bodyPart: GameBodyPart.HEAD, name: '标准箱红', mesh: 'mesh/红色标准箱.vb', offset: [1, 0, 0], rotate: [0, 0, 0], scale: [0.3, 0.3, 0.3] },
 ]
@@ -147,14 +188,28 @@ world.onEntityContact(({entity, other})=>{
         for (const data of red_onhead) {
             addWearable(e, data)
         }
-        e.taking = 1;
+        if(other.tags().includes('conveyor')){
+            e.taking = 3;
+            entity.player.directMessage(`你捡起了一个传送带上的红色箱子`)
+        }
+        else{
+            e.taking = 1;
+            entity.player.directMessage(`你捡起了一个红色箱子`)
+        }
         other.destroy();
     }
     else if(other.id==='标准箱绿'){
         for (const data of green_onhead) {
             addWearable(e, data)
         }
-        e.taking = 2;
+        if(other.tags().includes('conveyor')){
+            e.taking = 4;
+            entity.player.directMessage(`你捡起了一个传送带上的绿色箱子`)
+        }
+        else{
+            e.taking = 2;
+            entity.player.directMessage(`你捡起了一个绿色箱子`)
+        }
         other.destroy();
     }
 })
