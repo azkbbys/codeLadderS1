@@ -129,7 +129,7 @@ world.onPlayerJoin(({entity})=>{
             let area = underfoot===287?2:1;
             if(area%2===entity.taking%2){
                 entity.player.directMessage('收集了1个箱子');
-                entity.shouji+=1;
+                entity.shouji+=entity.taking>2?2:1;
                 remoteChannel.sendClientEvent(entity, {type:'shouji', data:entity.shouji});
             }
             else{
