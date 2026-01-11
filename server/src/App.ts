@@ -289,10 +289,10 @@ world.onPlayerJoin(({entity})=>{
                     storehouseB+=1;
                     entity.task.getbox('B')
                 }
-                entity.taking = 0;
                 entity.player.directMessage('收集了1个箱子');
                 entity.shouji+=1;
                 entity.score+=entity.taking>2?2:1;
+                entity.taking = 0;
                 remoteChannel.sendClientEvent(entity, {type:'score', data:entity.score});
             }
             else{
@@ -483,9 +483,9 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
     else if((e.task.type==='B'||e.task.type==='AB')&&e.taking%2===1){
         e.task.getbox('B');
     }
-    e.taking = 0;
     e.shouji+=1;
-    e.score+=1;
+    e.score+=e.taking<=2?1:2;
+    e.taking = 0;
     e.player.directMessage(`已自动分拣1个箱子`);
     if(e.task.type==='C'){
         e.task.current_box+=1;
