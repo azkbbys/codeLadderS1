@@ -133,7 +133,7 @@ iii.“在 [30] 秒内收集 [5] 个任意货物”
 class Task{
     describe: string;// 任务描述
     timelimit: boolean;// 是否有时限
-    type: 'A' | 'B' | 'T' | 'AB';// 任务类别
+    type: 'A' | 'B' | 'T' | 'AB' | 'C';// 任务类别
     required_box: number;// 需要收集箱子数量
     required_boxa: number;// 需要收集A箱子数量
     required_boxb: number;// 需要收集B箱子数量
@@ -142,6 +142,7 @@ class Task{
     current_boxb: number;// 当前收集箱子数量
     interval: any;// 定时器ID
     chain: number;// 连续完成任务个数
+    required_tongyong: number;// 需要使用通用分拣站分拣的箱子数量
     time: number;// 限时任务的时间
     constructor(){
         this.describe = '';
@@ -154,6 +155,7 @@ class Task{
         this.required_box = 0;
         this.required_boxa = 0;
         this.required_boxb = 0;
+        this.required_tongyong = 0;
         this.interval = '';
         this.chain = 0; 
         this.refreshTask();
@@ -164,8 +166,8 @@ class Task{
         this.current_boxa = 0;
         this.current_boxb = 0;
         // 随机任务类型，1为A类，2为B类，3为限时，4为复合任务
-        // let type = randint(1,4);
-        let type = 4; // 调试用
+        // let type = randint(1,5);
+        let type = 5; // 调试用
         if(type===1){ 
             this.type = 'A';
             this.required_box = randint(3,5);
@@ -189,6 +191,11 @@ class Task{
             this.required_boxb = randint(1,4);
             this.describe = `收集${this.required_boxa}个A类货物和${this.required_boxb}个B类货物`;
         }
+        else if(type===5){ 
+            this.type = 'C';
+            this.required_tongyong = randint(1,5);
+            this.describe = `使用通用分拣站处理${this.required_tongyong}个货物`;
+        }
     }
     startTiming(){
         // 开始计时
@@ -203,6 +210,15 @@ class Task{
         }
         else if(this.type==='AB'){
             if(this.current_boxa>=this.required_boxa&&this.current_boxb>=this.required_boxb){// 完成任务
+                clearInterval(this.interval);
+                return '完成任务';
+            }
+            else{
+                return '进行中';
+            }
+        }
+        else if(this.type==='C'){ 
+            if(this.current_box>=this.required_tongyong){// 完成任务
                 clearInterval(this.interval);
                 return '完成任务';
             }
@@ -301,7 +317,7 @@ world.onTick(({tick})=>{
             let status = e.task.checkTask();
             remoteChannel.sendClientEvent(e, {type:'taskinfo', data:{
                 describe: e.task.describe,
-                jindu: e.task.type!=='AB'?`${e.task.current_box}/${e.task.required_box}`:`A:${e.task.current_boxa}/${e.task.required_boxa},B:${e.task.current_boxb}/${e.task.required_boxb}`,
+                jindu: e.task.type==='AB'?`A:${e.task.current_boxa}/${e.task.required_boxa},B:${e.task.current_boxb}/${e.task.required_boxb}`:e.task.type=='C'?`${e.task.current_box}/${e.task.required_tongyong}`:`${e.task.current_box}/${e.task.required_box}`,
                 time: e.task.type==='T'?String(e.task.time):'无限制',
             }});
             remoteChannel.sendClientEvent(e, {type:'efficiency', data:{
@@ -412,5 +428,8 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
     e.shouji+=1;
     e.score+=1;
     e.player.directMessage(`已自动分拣1个箱子`);
+    if(e.task.type==='C'){
+        e.task.current_box+=1;
+    }
     remoteChannel.sendClientEvent(e, {type:'score', data:e.score});
 })
