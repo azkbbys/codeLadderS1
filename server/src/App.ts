@@ -98,13 +98,12 @@ function generate_box(){
         else if(rand===3){
             world.createEntity({
                 mesh:'mesh/红色标准箱.vb',
-                position:new GameVector3(48, 10, 59),
+                position:new GameVector3(48, 10, 60),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
                 gravity:true, // 是否受重力
                 id:'标准箱红',
-                meshOrientation:new GameQuaternion(randint(0,100)/100, randint(0,100)/100, randint(0,100)/100, 1),
                 friction:0.8,
                 tags:['conveyor'],
             })
@@ -112,13 +111,12 @@ function generate_box(){
         else if(rand===4){
             world.createEntity({
                 mesh:'mesh/绿色标准箱.vb',
-                position:new GameVector3(48, 10, 59),
+                position:new GameVector3(48, 10, 60),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
                 gravity:true, // 是否受重力
                 id:'标准箱绿',
-                meshOrientation:new GameQuaternion(randint(0,100)/100, randint(0,100)/100, randint(0,100)/100, 1),
                 friction:0.8,
                 tags:['conveyor'],
             })
@@ -169,7 +167,7 @@ class Task{
         this.current_boxb = 0;
         // 随机任务类型，1为A类，2为B类，3为限时，4为复合任务
         let type = randint(1,5);
-        // let type = 5; // 调试用
+        // let type = 4; // 调试用
         if(type===1){ 
             this.type = 'A';
             this.required_box = randint(3,5);
@@ -321,19 +319,19 @@ world.onTick(({tick})=>{
         })
         generate_box()
     }
-    else if(tick % (16*1)===0){ 
+    if(tick % (16*1)===0){ 
         world.querySelectorAll('player').forEach((e)=>{
             e.totalTime++;
         })
     }
-    else if(tick % (16*0.5)===0){ 
+    if(tick % (3)===0){ 
         world.querySelectorAll('player').forEach((e)=>{
             // console.clear();
             // console.log(e.task);
             let status = e.task.checkTask();
             remoteChannel.sendClientEvent(e, {type:'taskinfo', data:{
                 describe: e.task.describe,
-                jindu: e.task.type==='AB'?`A:${e.task.current_boxa}/${e.task.required_boxa},B:${e.task.current_boxb}/${e.task.required_boxb}`:e.task.type=='C'?`${e.task.current_box}/${e.task.required_tongyong}`:`${e.task.current_box}/${e.task.required_box}`,
+                jindu: e.task.type==='AB'?`A:${e.task.current_boxa>=e.task.required_boxa?'√':`${e.task.current_boxa}/${e.task.required_boxa}`},B:${e.task.current_boxb>=e.task.required_boxb?'√':`${e.task.current_boxb}/${e.task.required_boxb}`}`:e.task.type=='C'?`${e.task.current_box}/${e.task.required_tongyong}`:`${e.task.current_box}/${e.task.required_box}`,
                 time: e.task.type==='T'?String(e.task.time):'无限制',
             }});
             remoteChannel.sendClientEvent(e, {type:'efficiency', data:{
@@ -476,7 +474,6 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
         }
         storehouseA+=1;
     }
-    e.taking = 0;
     if(e.task.type==='T'){
         e.task.getbox('');
     }
@@ -486,6 +483,7 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
     else if((e.task.type==='B'||e.task.type==='AB')&&e.taking%2===1){
         e.task.getbox('B');
     }
+    e.taking = 0;
     e.shouji+=1;
     e.score+=1;
     e.player.directMessage(`已自动分拣1个箱子`);
