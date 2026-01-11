@@ -32,6 +32,9 @@ centerText.visible = false
 const currentTask = find('screen')?.uiText_currentTask as UiText;
 const jindu = find('screen')?.uiText_jindu as UiText;
 const time = find('screen')?.uiText_time as UiText;
+const average = find('screen')?.uiText_average as UiText;
+const totaltime = find('screen')?.uiText_totaltime as UiText;
+const chain = find('screen')?.uiText_chain as UiText;
 async function show_error() {
     centerText.textContent = '类型错误';
     centerText.visible = true;
@@ -46,7 +49,7 @@ async function show_taskstatus(text: string) {
 }
 
 remoteChannel.onClientEvent((args) =>{
-    if(args.type==='shouji'){
+    if(args.type==='score'){
         collectedText.textContent = '总分：'+args.data;
     }
     else if(args.type==='error'){
@@ -64,5 +67,10 @@ remoteChannel.onClientEvent((args) =>{
         currentTask.textContent = `当前任务：${args.data.describe}`;
         jindu.textContent = `进度：${args.data.jindu}`;
         time.textContent = `剩余时间：${args.data.time}`;
+    }
+    else if(args.type==='efficiency'){
+        totaltime.textContent = `总操作时间：${args.data.totalTime}`;
+        average.textContent = `平均每分钟收集：${args.data.average}`;
+        chain.textContent = `连续完成数：${args.data.chain}`;
     }
 })

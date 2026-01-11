@@ -137,6 +137,7 @@ class Task{
     required_box: number;// 需要收集箱子数量
     current_box: number;// 当前收集箱子数量
     interval: any;// 定时器ID
+    chain: number;// 连续完成任务个数
     time: number;// 限时任务的时间
     constructor(){
         this.describe = '';
@@ -146,6 +147,7 @@ class Task{
         this.current_box = 0;
         this.required_box = 0;
         this.interval = '';
+        this.chain = 0; 
         this.refreshTask();
     }
     refreshTask(){
@@ -200,8 +202,10 @@ class Task{
 world.onPlayerJoin(({entity})=>{
     entity.task = new Task();
     // console.log(entity.task)
+    entity.totalTime = 0; // 从加入以来到现在的时间
     entity.taking = 0; // 拿着的箱子，0没有，1红色，2绿色
     entity.shouji = 0; // 收集的箱子数量
+    entity.score = 0; // 分数
     entity.player.enableJump = false;
     entity.player.walkSpeed = walkSpeed;
     entity.player.runSpeed = runSpeed;
@@ -221,8 +225,9 @@ world.onPlayerJoin(({entity})=>{
                     entity.task.getbox()
                 }
                 entity.player.directMessage('收集了1个箱子');
-                entity.shouji+=entity.taking>2?2:1;
-                remoteChannel.sendClientEvent(entity, {type:'shouji', data:entity.shouji});
+                entity.shouji+=1;
+                entity.score+=entity.taking>2?2:1;
+                remoteChannel.sendClientEvent(entity, {type:'score', data:entity.score});
             }
             else{
                 entity.player.directMessage(`类型错误，${entity.taking%2===1?'红色':'绿色'}箱子不应放在${area===1?'红':'绿'}区域`);
@@ -248,6 +253,11 @@ world.onTick(({tick})=>{
         })
         generate_box()
     }
+    else if(tick % (16*1)===0){ 
+        world.querySelectorAll('player').forEach((e)=>{
+            e.totalTime++;
+        })
+    }
     else if(tick % (16*0.5)===0){ 
         world.querySelectorAll('player').forEach((e)=>{
             // console.clear();
@@ -258,14 +268,21 @@ world.onTick(({tick})=>{
                 jindu: `${e.task.current_box}/${e.task.required_box}`,
                 time: e.task.type==='T'?String(e.task.time):'无限制',
             }});
+            remoteChannel.sendClientEvent(e, {type:'efficiency', data:{
+                totalTime: e.totalTime,
+                average: Math.floor(e.shouji/(e.totalTime/60)),
+                chain: e.task.chain,
+            }});
             if(status!=='进行中'){
                 if(status==='时间到'){ 
                     remoteChannel.sendClientEvent(e, {type:'task', data:'时间到！'});
+                    e.task.chain=0;
                 }
                 else if(status==='完成任务'){
                     remoteChannel.sendClientEvent(e, {type:'task', data:'任务完成！'});
-                    e.player.directMessage('你已完成任务，获得100分，新的任务已生成！');   
-                    e.shouji += 100;
+                    e.player.directMessage('你已完成任务，获得100分，新的任务已生成！');
+                    e.score += 100;
+                    e.task.chain++;
                 }
                 e.task.refreshTask();
             }
