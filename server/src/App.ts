@@ -319,6 +319,7 @@ world.onTick(({tick})=>{
                     e.player.directMessage('你已完成任务，获得100分，新的任务已生成！');
                     e.score += 100;
                     e.task.chain++;
+                    remoteChannel.sendClientEvent(e, {type:'score', data:e.score});
                 }
                 e.task.refreshTask();
             }
