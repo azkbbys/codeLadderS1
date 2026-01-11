@@ -3,6 +3,8 @@ console.clear()
 var walkSpeed = 0.5;
 var runSpeed = 0.5;
 var acceleration = 0.5;
+let storehouseA = 0;
+let storehouseB = 0;
 
 require('./navigate.ts')
 
@@ -166,8 +168,8 @@ class Task{
         this.current_boxa = 0;
         this.current_boxb = 0;
         // 随机任务类型，1为A类，2为B类，3为限时，4为复合任务
-        // let type = randint(1,5);
-        let type = 5; // 调试用
+        let type = randint(1,5);
+        // let type = 5; // 调试用
         if(type===1){ 
             this.type = 'A';
             this.required_box = randint(3,5);
@@ -235,6 +237,7 @@ class Task{
         }
     }
     getbox(type: 'A' | 'B' | 'X'){
+        if(this.type==='C')return;
         if(this.type==='AB'){
             if(type==='A'){
                 this.current_boxa++;
@@ -255,7 +258,7 @@ world.onPlayerJoin(({entity})=>{
     entity.task = new Task();
     // console.log(entity.task)
     entity.totalTime = 0; // 从加入以来到现在的时间
-    entity.taking = 0; // 拿着的箱子，0没有，1红色，2绿色
+    entity.taking = 0; // 拿着的箱子，0没有，1红色(B)，2绿色(A)
     entity.shouji = 0; // 收集的箱子数量
     entity.score = 0; // 分数
     entity.player.enableJump = false;
@@ -270,12 +273,25 @@ world.onPlayerJoin(({entity})=>{
             entity.player.removeWearable(entity.player.wearables(GameBodyPart.HEAD)[0])
             let area = underfoot===287?2:1;
             if(area%2===entity.taking%2){
-                if(entity.taking%2===0&&(entity.task.type==='T'||entity.task.type==='A'||entity.task.type==='AB')){
+                if(entity.taking%2===0&&(entity.task.type==='T'||entity.task.type==='A'||entity.task.type==='AB'||entity.task.type==='C')){
+                    if(storehouseA>=10){
+                        entity.player.directMessage('A类仓库已满！');
+                        entity.taking = 0;
+                        return;
+                    }
+                    storehouseA+=1;
                     entity.task.getbox('A')
                 }
-                else if(entity.taking%2===1&&(entity.task.type==='T'||entity.task.type==='B'||entity.task.type==='AB')){
+                else if(entity.taking%2===1&&(entity.task.type==='T'||entity.task.type==='B'||entity.task.type==='AB'||entity.task.type==='C')){
+                    if(storehouseB>=10){
+                        entity.player.directMessage('B类仓库已满！');
+                        entity.taking = 0;
+                        return;
+                    }
+                    storehouseB+=1;
                     entity.task.getbox('B')
                 }
+                entity.taking = 0;
                 entity.player.directMessage('收集了1个箱子');
                 entity.shouji+=1;
                 entity.score+=entity.taking>2?2:1;
@@ -325,6 +341,9 @@ world.onTick(({tick})=>{
                 average: Math.floor(e.shouji/(e.totalTime/60)),
                 chain: e.task.chain,
             }});
+            remoteChannel.sendClientEvent(e, {type:'storehouse', data:{
+                text: `A:${storehouseA}/10,B:${storehouseB}/10`,
+            }});
             if(status!=='进行中'){
                 if(status==='时间到'){ 
                     remoteChannel.sendClientEvent(e, {type:'task', data:'时间到！'});
@@ -340,6 +359,32 @@ world.onTick(({tick})=>{
                 e.task.refreshTask();
             }
         })
+    }
+    if(tick % (16*60)===0){// 仓库管理员npc
+        let kind = randint(1,2);//1A2B
+        if(kind===1&&storehouseA<=0){
+            kind = 2;
+        }
+        if(kind===2&&storehouseB<=0)return;
+        
+        if(kind===1){
+            let n = randint(1,storehouseA);
+            storehouseA -= n;
+            world.querySelectorAll('player').forEach((e)=>{
+                remoteChannel.sendClientEvent(e, {type:'notice', data:{
+                    text: `仓库管理员NPC将${n}个A类箱子取走！`,
+                }});
+            })
+        }
+        else{
+            let n = randint(1,storehouseB);
+            storehouseB -= n;
+            world.querySelectorAll('player').forEach((e)=>{
+                remoteChannel.sendClientEvent(e, {type:'notice', data:{
+                    text: `仓库管理员NPC将${n}个B类箱子取走！`,
+                }});
+            })
+        }
     }
 })
 const destroyArea = world.addZone({
@@ -412,8 +457,26 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
     }
     else if(entity.taking===0){
         return;
-    };// 不是玩家或者没拿东西就调出
+    };// 不是玩家或者没拿东西就跳出
     let e = entity as GamePlayerEntity;
+    e.player.removeWearable(e.player.wearables(GameBodyPart.HEAD)[0])
+    if(e.taking%2===1){ 
+        if(storehouseB>=10){
+            e.player.directMessage('B类仓库已满！');
+            e.taking = 0;
+            return;
+        }
+        storehouseB+=1;
+    }
+    else if(e.taking%2===0){ 
+        if(storehouseA>=10){
+            e.player.directMessage('A类仓库已满！');
+            e.taking = 0;
+            return;
+        }
+        storehouseA+=1;
+    }
+    e.taking = 0;
     if(e.task.type==='T'){
         e.task.getbox('');
     }
@@ -423,8 +486,6 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
     else if((e.task.type==='B'||e.task.type==='AB')&&e.taking%2===1){
         e.task.getbox('B');
     }
-    e.player.removeWearable(e.player.wearables(GameBodyPart.HEAD)[0])
-    e.taking = 0;
     e.shouji+=1;
     e.score+=1;
     e.player.directMessage(`已自动分拣1个箱子`);
