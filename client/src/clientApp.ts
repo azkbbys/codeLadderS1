@@ -1,4 +1,5 @@
 import i18n from "@root/i18n";
+import find from "../UiIndex";
 
 const UiRoot = UiScreen.getAllScreen()[0]
 const collectedText = UiText.create();
@@ -12,35 +13,56 @@ collectedText.position.offset.x = 0;
 collectedText.position.offset.y = 0;
 collectedText.autoResize = 'XY';
 collectedText.parent = UiRoot;
-const errorText = UiText.create();
-errorText.name = 'errorText';
-errorText.textContent = '类型错误';
-errorText.textFontSize = 100;
-errorText.textColor.r = 255;
-errorText.textColor.g = 0;
-errorText.textColor.b = 0;
-errorText.position.offset.x = screenWidth/2;
-errorText.position.offset.y = screenHeight/2;
-errorText.autoResize = 'XY';
-errorText.parent = UiRoot;
-errorText.textXAlignment = 'Center';
-errorText.textYAlignment = 'Center';
-errorText.anchor.x = 0.5
-errorText.anchor.y = 0.5
-errorText.visible = false
-
+const centerText = UiText.create();
+centerText.name = 'centerText';
+centerText.textContent = '类型错误';
+centerText.textFontSize = 100;
+centerText.textColor.r = 255;
+centerText.textColor.g = 0;
+centerText.textColor.b = 0;
+centerText.position.offset.x = screenWidth/2;
+centerText.position.offset.y = screenHeight/2;
+centerText.autoResize = 'XY';
+centerText.parent = UiRoot;
+centerText.textXAlignment = 'Center';
+centerText.textYAlignment = 'Center';
+centerText.anchor.x = 0.5
+centerText.anchor.y = 0.5
+centerText.visible = false
+const currentTask = find('screen')?.uiText_currentTask as UiText;
+const jindu = find('screen')?.uiText_jindu as UiText;
+const time = find('screen')?.uiText_time as UiText;
 async function show_error() {
-    errorText.visible = true;
+    centerText.textContent = '类型错误';
+    centerText.visible = true;
     await sleep(3000);
-    errorText.visible = false;
+    centerText.visible = false;
+}
+async function show_taskstatus(text: string) {
+    centerText.textContent = text;
+    centerText.visible = true;
+    await sleep(3000);
+    centerText.visible = false;
 }
 
 remoteChannel.onClientEvent((args) =>{
     if(args.type==='shouji'){
         collectedText.textContent = '总分：'+args.data;
     }
-    if(args.type==='error'){
-        errorText.position.offset.x = screenWidth/2;
+    else if(args.type==='error'){
+        centerText.textColor.r = 255;
+        centerText.textColor.g = 0;
+        centerText.position.offset.x = screenWidth/2;
         show_error();
+    }
+    else if(args.type==='task'){
+        centerText.textColor.r = args.data==='任务完成！' ? 0 : 255;
+        centerText.textColor.g = args.data==='任务完成！' ? 255 : 0;
+        show_taskstatus(args.data);
+    }
+    else if(args.type==='taskinfo'){
+        currentTask.textContent = `当前任务：${args.data.describe}`;
+        jindu.textContent = `进度：${args.data.jindu}`;
+        time.textContent = `剩余时间：${args.data.time}`;
     }
 })
