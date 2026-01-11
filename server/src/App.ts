@@ -125,7 +125,7 @@ function generate_box(){
 }
 // 任务类
 /*
-c.随机任务类型包括： 
+随机任务类型包括： 
 i.“收集 [3-5] 个 A类 货物”
 ii.“收集 [2-4] 个 B类 货物”
 iii.“在 [30] 秒内收集 [5] 个任意货物”
@@ -448,7 +448,7 @@ const autoArea = world.addZone({
         new GameVector3(35, 10, 35)
     ),
 });
-autoArea.onEnter(({entity})=>{// 销毁末端箱子
+autoArea.onEnter(({entity})=>{// 自动分拣区域
     if(!entity.player){
         entity.destroy();
         return;
@@ -457,7 +457,7 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
         return;
     };// 不是玩家或者没拿东西就跳出
     let e = entity as GamePlayerEntity;
-    e.player.removeWearable(e.player.wearables(GameBodyPart.HEAD)[0])
+    e.player.removeWearable(e.player.wearables(GameBodyPart.HEAD)[0])// 取下模型
     if(e.taking%2===1){ 
         if(storehouseB>=10){
             e.player.directMessage('B类仓库已满！');
@@ -484,7 +484,7 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
         e.task.getbox('B');
     }
     e.shouji+=1;
-    e.score+=e.taking<=2?1:2;
+    e.score+=1;// 自动分拣的货物固定1分
     e.taking = 0;
     e.player.directMessage(`已自动分拣1个箱子`);
     if(e.task.type==='C'){
