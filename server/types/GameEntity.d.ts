@@ -6,4 +6,6 @@ declare interface GameEntity extends GameEntity {
     shouji: number;
     taking: number;
     task: Task;
+    totalTime: number;
+    score: number;
 };
