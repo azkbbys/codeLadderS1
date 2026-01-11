@@ -343,3 +343,37 @@ world.onEntityContact(({entity, other})=>{
         other.destroy();
     }
 })
+
+// 自动分拣
+const autoArea = world.addZone({
+    selector: "*",
+    bounds: new GameBounds3(
+        new GameVector3(25, 7, 25),
+        new GameVector3(35, 10, 35)
+    ),
+});
+autoArea.onEnter(({entity})=>{// 销毁末端箱子
+    if(!entity.player){
+        entity.destroy();
+        return;
+    }
+    else if(entity.taking===0){
+        return;
+    };// 不是玩家或者没拿东西就调出
+    let e = entity as GamePlayerEntity;
+    if(e.task.type==='T'){
+        e.task.getbox();
+    }
+    else if(e.task.type==='A'&&e.taking%2===0){
+        e.task.getbox();
+    }
+    else if(e.task.type==='B'&&e.taking%2===1){
+        e.task.getbox();
+    }
+    e.player.removeWearable(e.player.wearables(GameBodyPart.HEAD)[0])
+    e.taking = 0;
+    e.shouji+=1;
+    e.score+=1;
+    e.player.directMessage(`已自动分拣1个箱子`);
+    remoteChannel.sendClientEvent(e, {type:'score', data:e.score});
+})
