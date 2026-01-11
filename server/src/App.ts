@@ -18,6 +18,15 @@ function randint(min:number, max:number){
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 /**
+ * 从数组中随机选择一个元素
+ * 
+ * @param arr 
+ * @returns 
+ */
+function choice<T>(arr:T[]):T{
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+/**
  * 穿戴配件
  * 
  * @param entity 
@@ -87,7 +96,7 @@ function generate_box(){
         else if(rand===3){
             world.createEntity({
                 mesh:'mesh/红色标准箱.vb',
-                position:new GameVector3(48, 10, randint(58,59)),
+                position:new GameVector3(48, 10, 59),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
@@ -101,7 +110,7 @@ function generate_box(){
         else if(rand===4){
             world.createEntity({
                 mesh:'mesh/绿色标准箱.vb',
-                position:new GameVector3(48, 10, randint(58,59)),
+                position:new GameVector3(48, 10, 59),
                 meshScale:new GameVector3(0.05, 0.05, 0.05),
                 collides:true, // 是否可碰撞
                 fixed:false, // 是否固定
@@ -114,8 +123,83 @@ function generate_box(){
         }
     }
 }
-
+// 任务类
+/*
+c.随机任务类型包括： 
+i.“收集 [3-5] 个 A类 货物”
+ii.“收集 [2-4] 个 B类 货物”
+iii.“在 [30] 秒内收集 [5] 个任意货物”
+*/
+class Task{
+    describe: string;// 任务描述
+    timelimit: boolean;// 是否有时限
+    type: 'A' | 'B' | 'T';// 任务类别
+    required_box: number;// 需要收集箱子数量
+    current_box: number;// 当前收集箱子数量
+    interval: any;// 定时器ID
+    time: number;// 限时任务的时间
+    constructor(){
+        this.describe = '';
+        this.timelimit = false;
+        this.type = 'A';
+        this.time = 0;
+        this.current_box = 0;
+        this.required_box = 0;
+        this.interval = '';
+        this.refreshTask();
+    }
+    refreshTask(){
+        // 初始化变量
+        this.current_box = 0;
+        // 随机任务类型，1为A类，2为B类，3为限时
+        let type = randint(1,3);
+        if(type===1){ 
+            this.type = 'A';
+            this.required_box = randint(3,5);
+            this.describe = `收集${this.required_box}个A类货物`;
+        }
+        else if(type===2){ 
+            this.type = 'B';
+            this.required_box = randint(2,4);
+            this.describe = `收集${this.required_box}个B类货物`;
+        }
+        else if(type===3){ 
+            this.type = 'T';
+            this.time=30;
+            this.required_box = 5;
+            this.describe = '在 30 秒内收集 5 个任意货物';
+            this.startTiming();
+        }
+    }
+    startTiming(){
+        // 开始计时
+        this.interval = setInterval(()=>{
+            this.time--;
+        },1000);
+    }
+    checkTask(){
+        if(this.type==='T'&&this.time<=0){// 时间到，任务失败
+            clearInterval(this.interval);
+            return '时间到';
+        }
+        else if(this.current_box>=this.required_box){// 完成任务
+            clearInterval(this.interval);
+            return '完成任务';
+        }
+        else{
+            return '进行中';
+        }
+    }
+    getbox(){
+        this.current_box++;
+    }
+    toString(){
+        return `任务类型: ${this.type==='A'?'收集绿色箱子':this.type==='B'?'收集红色箱子':'限时收集箱子'} \n任务描述: ${this.describe} \n任务进度: ${this.current_box}/${this.required_box} \n任务状态: ${this.checkTask()}${this.type==='T'?'\n剩余时间: '+this.time+' 秒':''}`;
+    }
+}
 world.onPlayerJoin(({entity})=>{
+    entity.task = new Task();
+    // console.log(entity.task)
     entity.taking = 0; // 拿着的箱子，0没有，1红色，2绿色
     entity.shouji = 0; // 收集的箱子数量
     entity.player.enableJump = false;
@@ -130,6 +214,12 @@ world.onPlayerJoin(({entity})=>{
             entity.player.removeWearable(entity.player.wearables(GameBodyPart.HEAD)[0])
             let area = underfoot===287?2:1;
             if(area%2===entity.taking%2){
+                if(entity.taking%2===0&&(entity.task.type==='T'||entity.task.type==='A')){
+                    entity.task.getbox()
+                }
+                else if(entity.taking%2===1&&(entity.task.type==='T'||entity.task.type==='B')){
+                    entity.task.getbox()
+                }
                 entity.player.directMessage('收集了1个箱子');
                 entity.shouji+=entity.taking>2?2:1;
                 remoteChannel.sendClientEvent(entity, {type:'shouji', data:entity.shouji});
@@ -157,6 +247,29 @@ world.onTick(({tick})=>{
             }
         })
         generate_box()
+    }
+    else if(tick % (16*0.5)===0){ 
+        world.querySelectorAll('player').forEach((e)=>{
+            // console.clear();
+            // console.log(e.task);
+            let status = e.task.checkTask();
+            remoteChannel.sendClientEvent(e, {type:'taskinfo', data:{
+                describe: e.task.describe,
+                jindu: `${e.task.current_box}/${e.task.required_box}`,
+                time: e.task.type==='T'?String(e.task.time):'无限制',
+            }});
+            if(status!=='进行中'){
+                if(status==='时间到'){ 
+                    remoteChannel.sendClientEvent(e, {type:'task', data:'时间到！'});
+                }
+                else if(status==='完成任务'){
+                    remoteChannel.sendClientEvent(e, {type:'task', data:'任务完成！'});
+                    e.player.directMessage('你已完成任务，获得100分，新的任务已生成！');   
+                    e.shouji += 100;
+                }
+                e.task.refreshTask();
+            }
+        })
     }
 })
 const destroyArea = world.addZone({
