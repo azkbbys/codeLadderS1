@@ -29,8 +29,8 @@ world.onPlayerJoin(({entity})=>{
                     if(entity.position.distance(box.position)<3)return;
                     if(voxels.getVoxelId(entity.position.x+1, entity.position.y, entity.position.z)+voxels.getVoxelId(entity.position.x-1, entity.position.y, entity.position.z)+voxels.getVoxelId(entity.position.x, entity.position.y, entity.position.z+1)+voxels.getVoxelId(entity.position.x, entity.position.y, entity.position.z-1)!=0){
                         // 被挡住了，先朝地图中间走
-                        entity.velocity.x = entity.position.x>30?-1:1;
-                        entity.velocity.z = entity.position.z>30?-1:1;
+                        entity.velocity.x = entity.position.x>30?-2:2;
+                        entity.velocity.z = entity.position.z>30?-2:2;
                     }
                     await sleep(1)
                     entity.velocity.x = 2*cos;

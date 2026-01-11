@@ -35,6 +35,8 @@ const time = find('screen')?.uiText_time as UiText;
 const average = find('screen')?.uiText_average as UiText;
 const totaltime = find('screen')?.uiText_totaltime as UiText;
 const chain = find('screen')?.uiText_chain as UiText;
+const storehouse = find('screen')?.uiText_storehouse as UiText;
+const notice = find('screen')?.uiText_notice as UiText;
 async function show_error() {
     centerText.textContent = '类型错误';
     centerText.visible = true;
@@ -46,6 +48,12 @@ async function show_taskstatus(text: string) {
     centerText.visible = true;
     await sleep(3000);
     centerText.visible = false;
+}
+async function show_notice(text: string) {
+    notice.textContent = text;
+    notice.visible = true;
+    await sleep(3000);
+    notice.visible = false;
 }
 
 remoteChannel.onClientEvent((args) =>{
@@ -72,5 +80,11 @@ remoteChannel.onClientEvent((args) =>{
         totaltime.textContent = `总操作时间：${args.data.totalTime}`;
         average.textContent = `平均每分钟收集：${args.data.average}`;
         chain.textContent = `连续完成数：${args.data.chain}`;
+    }
+    else if(args.type==='storehouse'){
+        storehouse.textContent = `仓库：${args.data.text}`;
+    }
+    else if(args.type==='notice'){
+        show_notice(args.data.text);
     }
 })
