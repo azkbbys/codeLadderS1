@@ -133,9 +133,13 @@ iii.“在 [30] 秒内收集 [5] 个任意货物”
 class Task{
     describe: string;// 任务描述
     timelimit: boolean;// 是否有时限
-    type: 'A' | 'B' | 'T';// 任务类别
+    type: 'A' | 'B' | 'T' | 'AB';// 任务类别
     required_box: number;// 需要收集箱子数量
+    required_boxa: number;// 需要收集A箱子数量
+    required_boxb: number;// 需要收集B箱子数量
     current_box: number;// 当前收集箱子数量
+    current_boxa: number;// 当前收集箱子数量
+    current_boxb: number;// 当前收集箱子数量
     interval: any;// 定时器ID
     chain: number;// 连续完成任务个数
     time: number;// 限时任务的时间
@@ -145,7 +149,11 @@ class Task{
         this.type = 'A';
         this.time = 0;
         this.current_box = 0;
+        this.current_boxa = 0;
+        this.current_boxb = 0;
         this.required_box = 0;
+        this.required_boxa = 0;
+        this.required_boxb = 0;
         this.interval = '';
         this.chain = 0; 
         this.refreshTask();
@@ -153,8 +161,11 @@ class Task{
     refreshTask(){
         // 初始化变量
         this.current_box = 0;
-        // 随机任务类型，1为A类，2为B类，3为限时
-        let type = randint(1,3);
+        this.current_boxa = 0;
+        this.current_boxb = 0;
+        // 随机任务类型，1为A类，2为B类，3为限时，4为复合任务
+        // let type = randint(1,4);
+        let type = 4; // 调试用
         if(type===1){ 
             this.type = 'A';
             this.required_box = randint(3,5);
@@ -172,6 +183,12 @@ class Task{
             this.describe = '在 30 秒内收集 5 个任意货物';
             this.startTiming();
         }
+        else if(type===4){ 
+            this.type = 'AB';
+            this.required_boxa = randint(1,4);
+            this.required_boxb = randint(1,4);
+            this.describe = `收集${this.required_boxa}个A类货物和${this.required_boxb}个B类货物`;
+        }
     }
     startTiming(){
         // 开始计时
@@ -184,6 +201,15 @@ class Task{
             clearInterval(this.interval);
             return '时间到';
         }
+        else if(this.type==='AB'){
+            if(this.current_boxa>=this.required_boxa&&this.current_boxb>=this.required_boxb){// 完成任务
+                clearInterval(this.interval);
+                return '完成任务';
+            }
+            else{
+                return '进行中';
+            }
+        }
         else if(this.current_box>=this.required_box){// 完成任务
             clearInterval(this.interval);
             return '完成任务';
@@ -192,11 +218,21 @@ class Task{
             return '进行中';
         }
     }
-    getbox(){
-        this.current_box++;
+    getbox(type: 'A' | 'B' | 'X'){
+        if(this.type==='AB'){
+            if(type==='A'){
+                this.current_boxa++;
+            }
+            else if(type==='B'){
+                this.current_boxb++;
+            }
+        }
+        else{
+            this.current_box++;
+        }
     }
     toString(){
-        return `任务类型: ${this.type==='A'?'收集绿色箱子':this.type==='B'?'收集红色箱子':'限时收集箱子'} \n任务描述: ${this.describe} \n任务进度: ${this.current_box}/${this.required_box} \n任务状态: ${this.checkTask()}${this.type==='T'?'\n剩余时间: '+this.time+' 秒':''}`;
+        return `任务类型: ${this.type==='A'?'收集绿色箱子':this.type==='B'?'收集红色箱子':this.type==='T'?'限时任务':'复合任务'} \n任务描述: ${this.describe} \n任务进度: ${this.current_box}/${this.required_box} \n任务状态: ${this.checkTask()}${this.type==='T'?'\n剩余时间: '+this.time+' 秒':''}`;
     }
 }
 world.onPlayerJoin(({entity})=>{
@@ -218,11 +254,11 @@ world.onPlayerJoin(({entity})=>{
             entity.player.removeWearable(entity.player.wearables(GameBodyPart.HEAD)[0])
             let area = underfoot===287?2:1;
             if(area%2===entity.taking%2){
-                if(entity.taking%2===0&&(entity.task.type==='T'||entity.task.type==='A')){
-                    entity.task.getbox()
+                if(entity.taking%2===0&&(entity.task.type==='T'||entity.task.type==='A'||entity.task.type==='AB')){
+                    entity.task.getbox('A')
                 }
-                else if(entity.taking%2===1&&(entity.task.type==='T'||entity.task.type==='B')){
-                    entity.task.getbox()
+                else if(entity.taking%2===1&&(entity.task.type==='T'||entity.task.type==='B'||entity.task.type==='AB')){
+                    entity.task.getbox('B')
                 }
                 entity.player.directMessage('收集了1个箱子');
                 entity.shouji+=1;
@@ -265,7 +301,7 @@ world.onTick(({tick})=>{
             let status = e.task.checkTask();
             remoteChannel.sendClientEvent(e, {type:'taskinfo', data:{
                 describe: e.task.describe,
-                jindu: `${e.task.current_box}/${e.task.required_box}`,
+                jindu: e.task.type!=='AB'?`${e.task.current_box}/${e.task.required_box}`:`A:${e.task.current_boxa}/${e.task.required_boxa},B:${e.task.current_boxb}/${e.task.required_boxb}`,
                 time: e.task.type==='T'?String(e.task.time):'无限制',
             }});
             remoteChannel.sendClientEvent(e, {type:'efficiency', data:{
@@ -362,13 +398,13 @@ autoArea.onEnter(({entity})=>{// 销毁末端箱子
     };// 不是玩家或者没拿东西就调出
     let e = entity as GamePlayerEntity;
     if(e.task.type==='T'){
-        e.task.getbox();
+        e.task.getbox('');
     }
-    else if(e.task.type==='A'&&e.taking%2===0){
-        e.task.getbox();
+    else if((e.task.type==='A'||e.task.type==='AB')&&e.taking%2===0){
+        e.task.getbox('A');
     }
-    else if(e.task.type==='B'&&e.taking%2===1){
-        e.task.getbox();
+    else if((e.task.type==='B'||e.task.type==='AB')&&e.taking%2===1){
+        e.task.getbox('B');
     }
     e.player.removeWearable(e.player.wearables(GameBodyPart.HEAD)[0])
     e.taking = 0;
